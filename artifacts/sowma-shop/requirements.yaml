@@ -1,0 +1,22 @@
+packages:
+  "framer-motion": "For page transitions, smooth UI animations, and micro-interactions"
+  "zustand": "For robust global state management of the shopping cart and favorites"
+  "clsx": "For merging tailwind classes safely"
+  "tailwind-merge": "For merging tailwind classes safely"
+
+images:
+  - path: "artifacts/sowma-shop/public/images/hero-banner.png"
+    description: "A wide, vibrant, modern ecommerce hero banner showing abstract geometric shapes in warm orange and teal green colors. Subtle North African / Algerian cultural geometric patterns integrated gracefully into the glowing background."
+    aspect_ratio: "16:9"
+  - path: "artifacts/sowma-shop/public/images/promo-1.png"
+    description: "A promotional banner for an online store showing floating gift boxes and modern 3D abstract elements in deep green and gold."
+    aspect_ratio: "16:9"
+  - path: "artifacts/sowma-shop/public/images/placeholder-product.png"
+    description: "A clean, minimal 3D render of an abstract premium product box resting on a softly lit glowing pedestal."
+    aspect_ratio: "1:1"
+
+notes:
+  - Using Zustand for Cart and Favorites state to persist across routes without prop drilling.
+  - Implementing full RTL support using Tailwind's logical properties (ms, me, ps, pe, start, end).
+  - API hooks are imported directly from the generated @workspace/api-client-react package.
+  - Missing backend endpoints will gracefully show empty states or mock data if the API errors out.

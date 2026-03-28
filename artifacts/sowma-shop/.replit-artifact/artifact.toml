@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Sowma Shop"
+version = "1.0.0"
+id = "artifacts/sowma-shop"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25066
+
+[services.development]
+run = "pnpm --filter @workspace/sowma-shop run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/sowma-shop", "run", "build" ]
+publicDir = "artifacts/sowma-shop/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25066"
+BASE_PATH = "/"

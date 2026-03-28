@@ -1,22 +1,32 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Sowma.shop Algerian ecommerce marketplace API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: categories
+    description: Product categories
+  - name: products
+    description: Products
+  - name: orders
+    description: Orders
+  - name: regions
+    description: Algerian regions (wilayas)
+  - name: cart
+    description: Shopping cart
+  - name: favorites
+    description: Favorites / wishlist
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +34,191 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List all categories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+
+  /categories/{id}:
+    get:
+      operationId: getCategory
+      tags: [categories]
+      summary: Get a category by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Category details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "404":
+          description: Category not found
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products with optional filtering
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: inStock
+          in: query
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [price_asc, price_desc, newest, popular]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated product list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductList"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get a single product by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+
+  /products/{id}/related:
+    get:
+      operationId: getRelatedProducts
+      tags: [products]
+      summary: Get related products for a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Related products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductSummary"
+
+  /orders:
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Place an order (instant or full checkout)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+      responses:
+        "201":
+          description: Order placed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Validation error
+
+  /regions:
+    get:
+      operationId: listRegions
+      tags: [regions]
+      summary: List all Algerian wilayas
+      responses:
+        "200":
+          description: List of wilayas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Region"
+
+  /regions/{id}/cities:
+    get:
+      operationId: listCitiesByRegion
+      tags: [regions]
+      summary: List cities for a given wilaya
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Cities in the wilaya
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/City"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +229,263 @@ components:
       required:
         - status
 
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        nameAr:
+          type: string
+        nameFr:
+          type: string
+        description:
+          type: string
+        descriptionAr:
+          type: string
+        descriptionFr:
+          type: string
+        slug:
+          type: string
+        icon:
+          type: string
+        image:
+          type: string
+        productCount:
+          type: integer
+      required:
+        - id
+        - name
+        - nameAr
+        - nameFr
+        - slug
+
+    ProductSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        nameAr:
+          type: string
+        nameFr:
+          type: string
+        slug:
+          type: string
+        price:
+          type: number
+        originalPrice:
+          type: number
+        discount:
+          type: integer
+        image:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        inStock:
+          type: boolean
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        categoryId:
+          type: integer
+        categoryName:
+          type: string
+        categoryNameAr:
+          type: string
+        categoryNameFr:
+          type: string
+        isFavorite:
+          type: boolean
+      required:
+        - id
+        - name
+        - nameAr
+        - nameFr
+        - slug
+        - price
+        - inStock
+
+    Product:
+      allOf:
+        - $ref: "#/components/schemas/ProductSummary"
+        - type: object
+          properties:
+            description:
+              type: string
+            descriptionAr:
+              type: string
+            descriptionFr:
+              type: string
+            brand:
+              type: string
+            sku:
+              type: string
+            weight:
+              type: string
+            dimensions:
+              type: string
+            material:
+              type: string
+            color:
+              type: string
+            specifications:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProductSpec"
+
+    ProductSpec:
+      type: object
+      properties:
+        key:
+          type: string
+        keyAr:
+          type: string
+        value:
+          type: string
+        valueAr:
+          type: string
+      required:
+        - key
+        - value
+
+    ProductList:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductSummary"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - products
+        - total
+        - page
+        - limit
+        - totalPages
+
+    CreateOrderRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+        phone:
+          type: string
+        regionId:
+          type: integer
+        cityId:
+          type: integer
+        address:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        notes:
+          type: string
+      required:
+        - fullName
+        - phone
+        - regionId
+        - items
+
+    OrderItem:
+      type: object
+      properties:
+        productId:
+          type: integer
+        quantity:
+          type: integer
+        price:
+          type: number
+      required:
+        - productId
+        - quantity
+        - price
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        orderNumber:
+          type: string
+        status:
+          type: string
+        fullName:
+          type: string
+        phone:
+          type: string
+        regionId:
+          type: integer
+        cityId:
+          type: integer
+        address:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        total:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - orderNumber
+        - status
+        - total
+        - createdAt
+
+    Region:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+        nameAr:
+          type: string
+        nameFr:
+          type: string
+      required:
+        - id
+        - code
+        - name
+        - nameAr
+        - nameFr
+
+    City:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        nameAr:
+          type: string
+        nameFr:
+          type: string
+        regionId:
+          type: integer
+      required:
+        - id
+        - name
+        - nameAr
+        - nameFr
+        - regionId
