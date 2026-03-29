@@ -4,10 +4,22 @@ import {
   citiesTable,
   categoriesTable,
   productsTable,
+  ordersTable,
 } from "@workspace/db/schema";
 
 async function seed() {
-  console.log("Seeding database...");
+  const seedMode = process.env.SEED_MODE === "bootstrap" ? "bootstrap" : "reset";
+  console.log(`Seeding database in ${seedMode} mode...`);
+
+  if (seedMode === "reset") {
+    // Delete child tables first so reruns do not fail on foreign keys.
+    await db.delete(ordersTable);
+    await db.delete(productsTable);
+    await db.delete(categoriesTable);
+    await db.delete(citiesTable);
+    await db.delete(regionsTable);
+    console.log("Cleared existing orders, products, categories, cities, and regions");
+  }
 
   // REGIONS (58 Algerian Wilayas)
   const regions = [
@@ -71,19 +83,32 @@ async function seed() {
     { code: "58", name: "In Guezzam", nameAr: "عين قزام", nameFr: "In Guezzam" },
   ];
 
-  await db.delete(regionsTable);
-  const insertedRegions = await db.insert(regionsTable).values(regions).returning();
-  console.log(`Inserted ${insertedRegions.length} regions`);
+  const existingRegions = seedMode === "bootstrap" ? await db.select().from(regionsTable) : [];
+  const existingRegionCodes = new Set(existingRegions.map((region) => region.code));
+  const missingRegions = regions.filter((region) => !existingRegionCodes.has(region.code));
+
+  if (missingRegions.length > 0) {
+    await db.insert(regionsTable).values(missingRegions);
+  }
+
+  const availableRegions = await db.select().from(regionsTable);
+  if (seedMode === "reset") {
+    console.log(`Inserted ${availableRegions.length} regions`);
+  } else if (missingRegions.length > 0) {
+    console.log(`Inserted ${missingRegions.length} missing regions`);
+  } else {
+    console.log(`Skipped regions; ${availableRegions.length} already present`);
+  }
 
   // CITIES (major cities per wilaya)
-  const algerId = insertedRegions.find(r => r.code === "16")!.id;
-  const oranId = insertedRegions.find(r => r.code === "31")!.id;
-  const constantineId = insertedRegions.find(r => r.code === "25")!.id;
-  const annId = insertedRegions.find(r => r.code === "23")!.id;
-  const setifId = insertedRegions.find(r => r.code === "19")!.id;
-  const tiziId = insertedRegions.find(r => r.code === "15")!.id;
-  const blidaId = insertedRegions.find(r => r.code === "09")!.id;
-  const batnaId = insertedRegions.find(r => r.code === "05")!.id;
+  const algerId = availableRegions.find(r => r.code === "16")!.id;
+  const oranId = availableRegions.find(r => r.code === "31")!.id;
+  const constantineId = availableRegions.find(r => r.code === "25")!.id;
+  const annId = availableRegions.find(r => r.code === "23")!.id;
+  const setifId = availableRegions.find(r => r.code === "19")!.id;
+  const tiziId = availableRegions.find(r => r.code === "15")!.id;
+  const blidaId = availableRegions.find(r => r.code === "09")!.id;
+  const batnaId = availableRegions.find(r => r.code === "05")!.id;
 
   const cities = [
     { name: "Algiers", nameAr: "الجزائر العاصمة", nameFr: "Alger Centre", regionId: algerId },
@@ -108,9 +133,22 @@ async function seed() {
     { name: "Barika", nameAr: "بريكة", nameFr: "Barika", regionId: batnaId },
   ];
 
-  await db.delete(citiesTable);
-  const insertedCities = await db.insert(citiesTable).values(cities).returning();
-  console.log(`Inserted ${insertedCities.length} cities`);
+  const existingCities = seedMode === "bootstrap" ? await db.select().from(citiesTable) : [];
+  const existingCityKeys = new Set(existingCities.map((city) => `${city.regionId}:${city.name}`));
+  const missingCities = cities.filter((city) => !existingCityKeys.has(`${city.regionId}:${city.name}`));
+
+  if (missingCities.length > 0) {
+    await db.insert(citiesTable).values(missingCities);
+  }
+
+  const availableCities = await db.select().from(citiesTable);
+  if (seedMode === "reset") {
+    console.log(`Inserted ${availableCities.length} cities`);
+  } else if (missingCities.length > 0) {
+    console.log(`Inserted ${missingCities.length} missing cities`);
+  } else {
+    console.log(`Skipped cities; ${availableCities.length} already present`);
+  }
 
   // CATEGORIES
   const categories = [
@@ -236,11 +274,24 @@ async function seed() {
     },
   ];
 
-  await db.delete(categoriesTable);
-  const insertedCats = await db.insert(categoriesTable).values(categories).returning();
-  console.log(`Inserted ${insertedCats.length} categories`);
+  const existingCategories = seedMode === "bootstrap" ? await db.select().from(categoriesTable) : [];
+  const existingCategorySlugs = new Set(existingCategories.map((category) => category.slug));
+  const missingCategories = categories.filter((category) => !existingCategorySlugs.has(category.slug));
 
-  const catMap = Object.fromEntries(insertedCats.map(c => [c.slug, c.id]));
+  if (missingCategories.length > 0) {
+    await db.insert(categoriesTable).values(missingCategories);
+  }
+
+  const availableCategories = await db.select().from(categoriesTable);
+  if (seedMode === "reset") {
+    console.log(`Inserted ${availableCategories.length} categories`);
+  } else if (missingCategories.length > 0) {
+    console.log(`Inserted ${missingCategories.length} missing categories`);
+  } else {
+    console.log(`Skipped categories; ${availableCategories.length} already present`);
+  }
+
+  const catMap = Object.fromEntries(availableCategories.map(c => [c.slug, c.id]));
 
   // PRODUCTS
   const products = [
@@ -673,9 +724,22 @@ async function seed() {
     },
   ];
 
-  await db.delete(productsTable);
-  const insertedProducts = await db.insert(productsTable).values(products).returning();
-  console.log(`Inserted ${insertedProducts.length} products`);
+  const existingProducts = seedMode === "bootstrap" ? await db.select().from(productsTable) : [];
+  const existingProductSlugs = new Set(existingProducts.map((product) => product.slug));
+  const missingProducts = products.filter((product) => !existingProductSlugs.has(product.slug));
+
+  if (missingProducts.length > 0) {
+    await db.insert(productsTable).values(missingProducts);
+  }
+
+  const availableProducts = await db.select().from(productsTable);
+  if (seedMode === "reset") {
+    console.log(`Inserted ${availableProducts.length} products`);
+  } else if (missingProducts.length > 0) {
+    console.log(`Inserted ${missingProducts.length} missing products`);
+  } else {
+    console.log(`Skipped products; ${availableProducts.length} already present`);
+  }
 
   console.log("Seeding complete!");
 }
