@@ -1,0 +1,21 @@
+{
+  "name": "Sowma Shop",
+  "short_name": "Sowma",
+  "description": "Compare prices and find the best deals in Algeria. Sowma Shop helps you save money by comparing products across Algerian stores. Smart shopping starts here.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10B981",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ]
+}
